@@ -109,18 +109,18 @@ growproc(int n)
 {
   uint sz;
 
-  
-  //if(proc->p_pages + n/PGSIZE > MAX_TOTAL_PAGES) return -1;
-  proc->p_pages=proc->p_pages + n/PGSIZE;
-  sz = proc->sz;
+  sz = proc->sz; // in bytes
   if(n > 0){
+      if (n/PGSIZE > MAX_TOTAL_PAGES - (proc->p_pages + proc->v_pages)){
+          return -1; // no more space to allocate pages
+      }
     if((sz = allocuvm(proc->pgdir, sz, sz + n)) == 0)
       return -1;
   } else if(n < 0){
     if((sz = deallocuvm(proc->pgdir, sz, sz + n)) == 0)
       return -1;
   }
-  proc->sz = sz;
+  proc->sz = sz; // new size (in bytes)
   switchuvm(proc);
   return 0;
 }

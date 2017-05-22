@@ -238,13 +238,18 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       return 0;
     }
     if(proc->p_pages == MAX_PSYC_PAGES){
-      //change_page():
-      return 0;
+      // change_pages(0); // 0 = LIFO
+      return 0; // TODO DELETE!
     }
     memset(mem, 0, PGSIZE);
     mappages(pgdir, (char*)a, PGSIZE, v2p(mem), PTE_W|PTE_U);
     proc->pages_RAM[i]=(char*)a;
-
+    if (proc->p_pages < MAX_PSYC_PAGES){
+      proc->p_pages++;
+    }
+    else{
+      proc->v_pages++;
+    }
   }
   return newsz;
 }

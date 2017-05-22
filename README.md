@@ -2,16 +2,18 @@
 
 proc.c:
 in fork:
-	createSwapFile(np); // בתוך הפורק, ככה בהכרח לא ניצור לאיניט
+    if (proc != initproc)
+        createSwapFile(np); // creates a swap file for proccess so he can use pages
 in exit:
 	removeSwapFile(proc); // delete the process swap file
 
 mmu.h:
 	#define MAX_PSYC_PAGES 15 //max process pages in RAM
 	#define MAX_TOTAL_PAGES 30 //max process pages
+	#define PTE_PG          0x200   // Page moved to secondary storage
 
 proc.h:
-	uint p_pages=0;
+	uint p_pages;
 	char * pages_RAM[15];        // Data structe for pages in RAM
 	char * pages_Disk[15];       // Data structe for pages in Disk
 

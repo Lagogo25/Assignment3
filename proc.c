@@ -160,7 +160,7 @@ fork(void)
   safestrcpy(np->name, proc->name, sizeof(proc->name));
  
   pid = np->pid;
-    createSwapFile(np);
+    createSwapFile(np); // creates a swap file for proccess so he can use pages
     // lock to force the compiler to emit the np->state write last.
   acquire(&ptable.lock);
   np->state = RUNNABLE;
@@ -210,6 +210,7 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   proc->state = ZOMBIE;
+  removeSwapFile(proc); // delete the process swap file
   sched();
   panic("zombie exit");
 }

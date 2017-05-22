@@ -229,15 +229,22 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     return oldsz;
 
   a = PGROUNDUP(oldsz);
-  for(; a < newsz; a += PGSIZE){
+  int i=0;
+  for(; a < newsz; a += PGSIZE, i++){
     mem = kalloc();
     if(mem == 0){
       cprintf("allocuvm out of memory\n");
       deallocuvm(pgdir, newsz, oldsz);
       return 0;
     }
+    if(proc->p_pages == MAX_PSYC_PAGES){
+      //change_page():
+      return 0;
+    }
     memset(mem, 0, PGSIZE);
     mappages(pgdir, (char*)a, PGSIZE, v2p(mem), PTE_W|PTE_U);
+    proc->pages_RAM[i]=(char*)a;
+
   }
   return newsz;
 }

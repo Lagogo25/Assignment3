@@ -45,6 +45,9 @@
 #define SEG_UCODE 4  // user code
 #define SEG_UDATA 5  // user data+stack
 #define SEG_TSS   6  // this process's task state
+#define MAX_PSYC_PAGES 15 //max process pages in RAM
+#define MAX_TOTAL_PAGES 30 //max process pages
+
 
 //PAGEBREAK!
 #ifndef __ASSEMBLER__

@@ -66,9 +66,14 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  uint p_pages;              // Current pages for process
+  char * pages_RAM[15];        // Data structe for pages in RAM
+  char * pages_Disk[15];       // Data structe for pages in Disk
+
 
   //Swap file. must initiate with create swap file
   struct file *swapFile;			//page file
+  
 
 };
 

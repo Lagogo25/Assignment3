@@ -47,8 +47,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  release(&ptable.lock);
 
+  release(&ptable.lock);
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
     p->state = UNUSED;
@@ -108,7 +108,10 @@ int
 growproc(int n)
 {
   uint sz;
+
   
+  //if(proc->p_pages + n/PGSIZE > MAX_TOTAL_PAGES) return -1;
+  proc->p_pages=proc->p_pages + n/PGSIZE;
   sz = proc->sz;
   if(n > 0){
     if((sz = allocuvm(proc->pgdir, sz, sz + n)) == 0)
@@ -157,8 +160,8 @@ fork(void)
   safestrcpy(np->name, proc->name, sizeof(proc->name));
  
   pid = np->pid;
-
-  // lock to force the compiler to emit the np->state write last.
+    createSwapFile(np);
+    // lock to force the compiler to emit the np->state write last.
   acquire(&ptable.lock);
   np->state = RUNNABLE;
   release(&ptable.lock);

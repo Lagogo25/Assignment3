@@ -86,8 +86,8 @@ struct proc {
 //   expandable heap
 
 struct process_pages{
-    int counter;
-    int place_in_file;
-    int all_pages[30][2];
+    int counter;                // counts the number of pages (total)
+    int place_in_file;          // where we will write next time
+    int all_pages[30][2];       // holds information about each page
 
 };

@@ -51,6 +51,13 @@ struct context {
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
+struct process_pages{
+    int counter;                // counts the number of pages (total)
+    int place_in_file;          // where we will write next time
+    int all_pages[30][2];       // holds information about each page
+
+};
+
 // Per-process state
 struct proc {
   uint sz;                      // Size of process memory (bytes)
@@ -69,7 +76,7 @@ struct proc {
 
   //Swap file. must initiate with create swap file
   struct file *swapFile;			//page file
-  struct process_pages *pages;
+  struct process_pages pages;
 
 
 };
@@ -80,9 +87,4 @@ struct proc {
 //   fixed-size stack
 //   expandable heap
 
-struct process_pages{
-    int counter;                // counts the number of pages (total)
-    int place_in_file;          // where we will write next time
-    int all_pages[30][2];       // holds information about each page
 
-};

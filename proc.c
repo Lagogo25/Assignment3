@@ -6,7 +6,6 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-#include "fs.h"
 
 struct {
   struct spinlock lock;
@@ -48,12 +47,13 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->pages->counter=0;
-  p->pages->place_in_file=0;
+    (p->pages).counter=0;
+
+  (p->pages).place_in_file=0;
 
   for (int i=0;i<MAX_TOTAL_PAGES;i++) {
-        p->pages->all_pages[i][0] = -1;
-        p->pages->all_pages[i][1] =  0;
+        p->pages.all_pages[i][0] = -1;
+        p->pages.all_pages[i][1] =  0;
   }
 
 
@@ -167,27 +167,36 @@ fork(void)
  
   pid = np->pid;
   //starting to copy all the parent pages to his son
-  np->pages->place_in_file = proc->pages->place_in_file;
-
-  if (proc != initproc)
-    createSwapFile(np); // creates a swap file for proccess so he can use pages
-
+  np->pages.place_in_file = proc->pages.place_in_file;
     for(int i=0;i<MAX_TOTAL_PAGES;i++){ //deep copy, all the pages addresses  and flags
-        np->pages->all_pages[i][0] = proc->pages->all_pages[i][0];
-        np->pages->all_pages[i][1] = proc->pages->all_pages[i][1];
+        np->pages.all_pages[i][0] = proc->pages.all_pages[i][0];
+        np->pages.all_pages[i][1] = proc->pages.all_pages[i][1];
     }
-    np->pages->counter=proc->pages->counter;
+  if (proc != initproc) {
+      createSwapFile(np); // creates a swap file for proccess so he can use pages
+      int block_index=0;  //index for block in disk
+      char buffer[PGSIZE/2];
+      int bla=PGSIZE/2;
+      memset(buffer,0,bla); //filling buffer with zeros
+      readFromSwapFile(proc,(char *)buffer,block_index,bla); //reading from parent, return number of reading bytes
+      np->pages.counter=proc->pages.counter;
+  }
+
    //deep copy of all parent files on disk, to son
-   int proc_reading=1; //how much bytes paren reads
-   int block_index=0;  //index for block in disk
-   char buffer[PGSIZE];
-    while(proc_reading > 0 ){
-        memset(buffer,0,PGSIZE); //fiiling buffer with zeros
-        proc_reading = readFromSwapFile(proc,(char *)buffer,block_index,PGSIZE); //reading from parent, return number of reading bytes
-        if (writeToSwapFile(np,(char *)buffer,block_index,proc_reading) == -1) //check if son can write the data from buffer
-            panic("Error! Copy Parent disk files to Son\n");
-        block_index =block_index+ PGSIZE; //increase the index to next page
-    }
+   //int proc_reading=1; //how much bytes paren reads
+  // int block_index=0;  //index for block in disk
+   //char buffer[PGSIZE/2];
+  //int bla=PGSIZE/2;
+  // memset(buffer,0,bla); //filling buffer with zeros
+   // readFromSwapFile(proc,(char *)buffer,block_index,bla); //reading from parent, return number of reading bytes
+
+  //while(proc_reading > 0 ){
+      //  memset(buffer,0,PGSIZE); //fiiling buffer with zeros
+      //  proc_reading = readFromSwapFile(proc,(char *)buffer,block_index,PGSIZE); //reading from parent, return number of reading bytes
+       // if (writeToSwapFile(np,(char *)buffer,block_index,proc_reading) == -1) //check if son can write the data from buffer
+       //     panic("Error! Copy Parent disk files to Son\n");
+       // block_index =block_index+ PGSIZE; //increase the index to next page
+    //}
 
 
     // lock to force the compiler to emit the np->state write last.

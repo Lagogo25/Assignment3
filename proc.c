@@ -157,8 +157,8 @@ fork(void)
   safestrcpy(np->name, proc->name, sizeof(proc->name));
  
   pid = np->pid;
-  //  if (proc != initproc)
-    //    createSwapFile(np); // creates a swap file for proccess so he can use pages
+  if (proc != initproc)
+    createSwapFile(np); // creates a swap file for proccess so he can use pages
     // lock to force the compiler to emit the np->state write last.
   acquire(&ptable.lock);
   np->state = RUNNABLE;

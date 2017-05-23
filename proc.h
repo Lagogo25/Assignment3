@@ -85,6 +85,6 @@ struct proc {
 //   expandable heap
 
 struct page{
-
+    int count;      // counts the number of pages (total)
 
 };

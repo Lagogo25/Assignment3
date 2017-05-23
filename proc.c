@@ -111,9 +111,6 @@ growproc(int n)
 
   sz = proc->sz; // in bytes
   if(n > 0){
-      if (n/PGSIZE > MAX_TOTAL_PAGES - (proc->p_pages + proc->v_pages)){
-          return -1; // no more space to allocate pages
-      }
     if((sz = allocuvm(proc->pgdir, sz, sz + n)) == 0)
       return -1;
   } else if(n < 0){
@@ -160,8 +157,8 @@ fork(void)
   safestrcpy(np->name, proc->name, sizeof(proc->name));
  
   pid = np->pid;
-    if (proc != initproc)
-        createSwapFile(np); // creates a swap file for proccess so he can use pages
+  //  if (proc != initproc)
+    //    createSwapFile(np); // creates a swap file for proccess so he can use pages
     // lock to force the compiler to emit the np->state write last.
   acquire(&ptable.lock);
   np->state = RUNNABLE;

@@ -66,9 +66,6 @@ struct proc {
   struct file *ofile[NOFILE];   // Open files
   struct inode *cwd;            // Current directory
   char name[16];                // Process name (debugging)
-  uint p_pages;                 // Current amount of pages for process (in RAM)
-  uint v_pages;                 // Current amount of pages for process (in DISK)
-
 
   //Swap file. must initiate with create swap file
   struct file *swapFile;			//page file

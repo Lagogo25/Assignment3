@@ -243,7 +243,6 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     }
     memset(mem, 0, PGSIZE);
     mappages(pgdir, (char*)a, PGSIZE, v2p(mem), PTE_W|PTE_U);
-    proc->pages_RAM[i]=(char*)a;
     if (proc->p_pages < MAX_PSYC_PAGES){
       proc->p_pages++;
     }

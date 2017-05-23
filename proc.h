@@ -68,13 +68,11 @@ struct proc {
   char name[16];                // Process name (debugging)
   uint p_pages;                 // Current amount of pages for process (in RAM)
   uint v_pages;                 // Current amount of pages for process (in DISK)
-  char *pages_RAM[15];         // Data struct for pages in RAM
-  char *pages_Disk[15];        // Data struct for pages in Disk (swap file)
 
 
   //Swap file. must initiate with create swap file
   struct file *swapFile;			//page file
-  struct process_pages pages;
+  struct process_pages *pages;
 
 
 };

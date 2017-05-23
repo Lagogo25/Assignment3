@@ -74,7 +74,8 @@ struct proc {
 
   //Swap file. must initiate with create swap file
   struct file *swapFile;			//page file
-  
+  struct process_pages pages;
+
 
 };
 
@@ -84,7 +85,9 @@ struct proc {
 //   fixed-size stack
 //   expandable heap
 
-struct page{
-    int count;      // counts the number of pages (total)
+struct process_pages{
+    int counter;
+    int place_in_file;
+    int all_pages[30][2];
 
 };

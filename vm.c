@@ -230,6 +230,8 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 
   a = PGROUNDUP(oldsz);
   for(; a < newsz; a += PGSIZE){
+      add_to_proc_address_table(a,proc); //add adress of page a to process va tables
+
     mem = kalloc();
     if(mem == 0){
       cprintf("allocuvm out of memory\n");

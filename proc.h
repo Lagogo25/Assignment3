@@ -87,4 +87,5 @@ struct proc {
 //   fixed-size stack
 //   expandable heap
 
+void add_to_proc_address_table(uint va, struct proc *p);
 

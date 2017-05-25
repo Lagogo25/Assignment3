@@ -222,31 +222,32 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
     char *mem;
     uint a;
-
     if(newsz >= KERNBASE)
         return 0;
     if(newsz < oldsz)
         return oldsz;
 
     a = PGROUNDUP(oldsz);
-    for(; a < newsz; a += PGSIZE){
-        add_to_proc_address_table(a,proc); //add adress of page a to process va tables
+    for(; a < newsz; a += PGSIZE) {
+        add_to_proc_address_table(a, proc); // add address of page a to process va tables
 
         mem = kalloc();
-        if(mem == 0){
+        if (mem == 0) {
             cprintf("allocuvm out of memory\n");
             deallocuvm(pgdir, newsz, oldsz);
             return 0;
         }
         memset(mem, 0, PGSIZE);
-        mappages(pgdir, (char*)a, PGSIZE, v2p(mem), PTE_W|PTE_U);
+        mappages(pgdir, (char *) a, PGSIZE, v2p(mem), PTE_W | PTE_U);
+        if(proc->pages.ram_pages_counter == MAX_PSYC_PAGES) {
+            move_page_from_ram_to_disk(proc, 0);
+        }
+        else{
+            proc->pages.ram_pages[proc->pages.ram_pages_counter] = a;
+            proc->pages.ram_pages_counter++;
+        }
+        proc->pages.counter++;
     }
-    if(proc->pages.ram_pages_counter==MAX_PSYC_PAGES) {
-        move_page_from_ram_to_disk(proc);
-    }
-    proc->pages.ram_pages[proc->pages.ram_pages_counter] = a;
-    proc->pages.ram_pages_counter++;
-    proc->pages.counter++;
     return newsz;
 }
 
@@ -385,26 +386,47 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
     return 0;
 }
 
-void change_pages(int va,struct proc *proc){
+void change_pages(int va,struct proc *p){
     va = (uint)PGROUNDDOWN(va);
     char *mem = kalloc();
     memset(mem, 0, PGSIZE);
-    // move_page_from_ram_to_disk(proc,va);
-    move_page_from_ram_to_disk(proc);
+    move_page_from_ram_to_disk(p, va);
     int i;
     for (i=0;i<MAX_TOTAL_PAGES;i++) {
-        if (proc->pages.all_pages[i][0] == va) {
-            mappages(proc->pgdir, (char*)va, PGSIZE, v2p(mem), (PTE_W|PTE_U) & ~PTE_PG);
-            readFromSwapFile(proc,(char *)va,proc->pages.all_pages[i][1],PGSIZE);
-            proc->pages.all_pages[i][1]=-1;
+        if (p->pages.all_pages[i][0] == va) {
+            mappages(p->pgdir, (char*)va, PGSIZE, v2p(mem), (PTE_W|PTE_U) & ~PTE_PG);
+            readFromSwapFile(p,(char *)va,p->pages.all_pages[i][1], PGSIZE);
+            p->pages.all_pages[i][1]=-1;
             break;
         }
     }
 }
 
-
-
-void move_page_from_ram_to_disk(struct proc *proc){}
+// should set the flag PTE_PG as well!!
+// va is the page address that we want to replace in disk with the page from ram
+// CURRENTLY WORKS AS LIFO!
+void move_page_from_ram_to_disk(struct proc *p, int va){
+    int i;
+    int to_switch = p->pages.ram_pages[14]; // LIFO!!!!
+    for (int i = 0; i < 30; i++){
+        if (p->pages.all_pages[i][0] == to_switch){
+            to_switch = i;
+            break;
+        }
+    }
+    if (va == 0){
+        p->pages.all_pages[to_switch][1] = (p->pages.counter - 15) * sizeof(int);
+    }
+    else{
+        for (i = 0; i < 30; i++) {
+            if (p->pages.all_pages[i][0] == va) {
+                p->pages.all_pages[to_switch][1] = p->pages.all_pages[i][1];
+                break;
+            }
+        }
+    }
+    writeToSwapFile(p, (char *)p->pages.all_pages[to_switch][0], p->pages.all_pages[to_switch][1], PGSIZE);
+}
 
 
 

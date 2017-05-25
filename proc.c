@@ -186,7 +186,7 @@ fork(void)
                     panic("Error! Copy Parent disk files to Son\n");
                 block_index =block_index+ PGSIZE; //increase the index to next page
             }
-                np->pages.counter = proc->pages.counter;
+            np->pages.counter = proc->pages.counter;
         }
     }
 

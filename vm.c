@@ -385,7 +385,24 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
-void change_pages(int va,struct proc *proc){}
+void change_pages(int va,struct proc *proc){
+    va = (uint)PGROUNDDOWN(va);
+    char *mem = kalloc();
+    memset(mem, 0, PGSIZE);
+   // move_page_from_ram_to_disk(proc,va);
+     move_page_from_ram_to_disk(proc);
+     int i;
+    for (i=0;i<MAX_TOTAL_PAGES;i++) {
+        if (proc->pages.all_pages[i][0] == va) {
+            mappages(proc->pgdir, (char*)va, PGSIZE, v2p(mem), (PTE_W|PTE_U) & ~PTE_PG);
+            readFromSwapFile(proc,(char *)va,proc->pages.all_pages[i][1],PGSIZE);
+            proc->pages.all_pages[i][1]=-1;
+            break;
+        }
+    }
+}
+
+
 
 void move_page_from_ram_to_disk(struct proc *proc){}
 

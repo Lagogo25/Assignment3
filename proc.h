@@ -55,8 +55,9 @@ struct process_pages{
     int counter;                // counts the number of pages (total)
     int ram_pages_counter;      // counts the number of pages (ram)
     int place_in_file;          // where we will write next time
-    int all_pages[30][2];       // holds information about each page
-    int ram_pages[15];          // holds ram pages
+    // 0 = va, 1 = offset, 2 = index/id
+    uint all_pages[30][3];       // holds information about each page
+    uint ram_pages[15];          // holds ram pages
 
 };
 

@@ -8,9 +8,8 @@
 #include "traps.h"
 #include "memlayout.h"
 
-#define PGSIZE 4096
-#define COUNT 20
 
+/*
 char* m[COUNT];
 
 
@@ -89,7 +88,7 @@ int main(int argc,char *argv[])
     // now we will fork proc with written swap and test aging
     printf(1,"fork #2\n");
     id = fork();
-    /* id = 0; */
+    // id = 0;
     if (id == 0) {
         j = 100;
         while (j > 0) {
@@ -109,5 +108,21 @@ int main(int argc,char *argv[])
     else
         wait();
 
+    exit();
+}
+*/
+#define TOTAL 3*4096
+int main(int argc,char *argv[])
+{
+    char *arr;
+
+    if((arr=(char*)malloc(TOTAL)) ==0){
+        printf(1,"alloc\n");
+        exit();
+    }
+   for(int i=0 ; i<TOTAL ;i++){
+       arr[i]=i;
+   }
+    printf(0, "bla: %d\n",arr[7]);
     exit();
 }

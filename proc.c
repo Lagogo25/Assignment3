@@ -52,7 +52,8 @@ allocproc(void)
     (p->pages).place_in_file=0;
     for (int i=0;i<MAX_TOTAL_PAGES;i++) {
         p->pages.all_pages[i][0] = -1;
-        p->pages.all_pages[i][1] =  0;
+        p->pages.all_pages[i][1] = 0;
+        p->pages.all_pages[i][2] = 0;
     }
 
     release(&ptable.lock);
@@ -166,11 +167,20 @@ fork(void)
     pid = np->pid;
 
     //starting to copy all the parent pages to his son
+    np->pages.counter = 0;
     np->pages.place_in_file = proc->pages.place_in_file;
-    for(int i=0;i<MAX_TOTAL_PAGES;i++){ //deep copy, all the pages addresses  and flags
+    for(int i=0;i<proc->pages.counter;i++){ //deep copy, all the pages addresses  and flags
         np->pages.all_pages[i][0] = proc->pages.all_pages[i][0];
         np->pages.all_pages[i][1] = proc->pages.all_pages[i][1];
+        np->pages.all_pages[i][2] = proc->pages.all_pages[i][2];
     }
+    for(int i=0;i<proc->pages.ram_pages_counter;i++){
+        np->pages.ram_pages[i] = proc->pages.ram_pages[i];
+    }
+   // np->pages.counter = proc->pages.counter;
+   // np->pages.ram_pages_counter = proc->pages.ram_pages_counter;
+
+
     if (proc != initproc) {
         createSwapFile(np); // creates a swap file for proccess so he can use pages
         if (proc->pid != 2) {
@@ -183,10 +193,14 @@ fork(void)
                 proc_reading = readFromSwapFile(proc, (char *) buffer, block_index,
                                                 bla); //reading from parent, return number of reading bytes
                 if (writeToSwapFile(np, (char *) buffer, block_index, proc_reading) == -1) //check if son can write the data from buffer
-                    panic("Error! Copy Parent disk files to Son\n");
-                block_index =block_index+ PGSIZE; //increase the index to next page
+                    panic("Error! Copy Parent disk files to son\n");
+                block_index = block_index + proc_reading; //increase the index to next page
+              //  cprintf("copy page to disk: %d\n", np->pages.all_pages[np->pages.counter][2]);
+              //  np->pages.counter++;
             }
-            np->pages.counter = proc->pages.counter;
+            // np->pages.counter = proc->pages.counter;
+           // np->pages.ram_pages_counter = proc->pages.ram_pages_counter;
+
         }
     }
 
@@ -505,6 +519,8 @@ void add_to_proc_address_table(uint va, struct proc *p)
         if (p->pages.all_pages[i][0] == -1) {
             p->pages.all_pages[i][0] = va;
             p->pages.all_pages[i][1] = 0;
+            p->pages.all_pages[i][2] = p->pages.counter;
+
             return ;
         }
     }

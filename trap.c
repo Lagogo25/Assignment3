@@ -79,8 +79,9 @@ trap(struct trapframe *tf)
             lapiceoi();
             break;
         case T_PGFLT:
+            cprintf("GOT PGFLT!!!\n");
             cr2=rcr2();
-            change_pages(cr2,proc);
+            //change_pages(cr2,proc);
             //PAGEBREAK: 13
         default:
             if(proc == 0 || (tf->cs&3) == 0){

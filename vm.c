@@ -245,11 +245,11 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
         else{
             proc->pages.ram_pages_counter++;
         }
-            proc->pages.ram_pages[proc->pages.ram_pages_counter-1] = a;
-            proc->pages.all_pages[proc->pages.counter][2]=proc->pages.counter;
-            cprintf("pid: %d page to ram:%d this is a: %d\n",proc->pid, proc->pages.all_pages[proc->pages.counter][2], a);
+        proc->pages.ram_pages[proc->pages.ram_pages_counter-1] = a;
+        proc->pages.all_pages[proc->pages.counter][2]=proc->pages.counter;
+        cprintf("pid: %d page to ram:%d this is a: %d\n",proc->pid, proc->pages.all_pages[proc->pages.counter][2], a);
 
-            //proc->pages.ram_pages_counter++;
+        //proc->pages.ram_pages_counter++;
 
         proc->pages.counter++;
     }
@@ -318,6 +318,38 @@ clearpteu(pde_t *pgdir, char *uva)
     *pte &= ~PTE_U;
 }
 
+//// Given a parent process's page table, create a copy
+//// of it for a child.
+//pde_t*
+//copyuvm(pde_t *pgdir, uint sz)
+//{
+//    pde_t *d;
+//    pte_t *pte;
+//    uint pa, i, flags;
+//    char *mem;
+//
+//    if((d = setupkvm()) == 0)
+//        return 0;
+//    for(i = 0; i < sz; i += PGSIZE){
+//        if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+//            panic("copyuvm: pte should exist");
+//        if(!(*pte & PTE_P))
+//            panic("copyuvm: page not present");
+//        pa = PTE_ADDR(*pte);
+//        flags = PTE_FLAGS(*pte);
+//        if((mem = kalloc()) == 0)
+//            goto bad;
+//        memmove(mem, (char*)p2v(pa), PGSIZE);
+//        if(mappages(d, (void*)i, PGSIZE, v2p(mem), flags) < 0)
+//            goto bad;
+//    }
+//    return d;
+//
+//    bad:
+//    freevm(d);
+//    return 0;
+//}
+
 // Given a parent process's page table, create a copy
 // of it for a child.
 pde_t*
@@ -325,6 +357,7 @@ copyuvm(pde_t *pgdir, uint sz)
 {
     pde_t *d;
     pte_t *pte;
+    pte_t *my_pte;
     uint pa, i, flags;
     char *mem;
 
@@ -333,7 +366,7 @@ copyuvm(pde_t *pgdir, uint sz)
     for(i = 0; i < sz; i += PGSIZE){
         if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
             panic("copyuvm: pte should exist");
-        if(!(*pte & PTE_P))
+        if(!(*pte & PTE_P) && !(*pte & PTE_PG))
             panic("copyuvm: page not present");
         pa = PTE_ADDR(*pte);
         flags = PTE_FLAGS(*pte);
@@ -342,6 +375,11 @@ copyuvm(pde_t *pgdir, uint sz)
         memmove(mem, (char*)p2v(pa), PGSIZE);
         if(mappages(d, (void*)i, PGSIZE, v2p(mem), flags) < 0)
             goto bad;
+        // if PTE_P was off and PTE_PG was on , do same for the new page (mappages always turn PTE_P on)
+        if ((my_pte = walkpgdir(d,(void*)i, 0)) == 0)
+            panic("copyuvm: my_pte is doing troubles");
+        if (!(*pte & PTE_P))
+            *my_pte = *my_pte & ~PTE_P;
     }
     return d;
 

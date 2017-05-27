@@ -50,11 +50,14 @@ allocproc(void)
 
     (p->pages).counter=0;
     (p->pages).place_in_file=0;
+    p->pages.ram_pages_counter=0;
     for (int i=0;i<MAX_TOTAL_PAGES;i++) {
         p->pages.all_pages[i][0] = -1;
         p->pages.all_pages[i][1] = 0;
         p->pages.all_pages[i][2] = 0;
     }
+    for(int i=0;i<MAX_PSYC_PAGES;i++)
+        p->pages.ram_pages[i]=-1;
 
     release(&ptable.lock);
     // Allocate kernel stack.
@@ -187,7 +190,7 @@ fork(void)
             uint block_index = 0;  //index for block in disk
             char buffer[PGSIZE / 2];
             uint bla = PGSIZE / 2;
-            int proc_reading=1; //how much bytes paren reads
+            int proc_reading=1; //how much bytes parent reads
             while(proc_reading > 0 ) {
                 memset(buffer, 0, bla); //filling buffer with zeros
                 proc_reading = readFromSwapFile(proc, (char *) buffer, block_index,
@@ -251,7 +254,7 @@ exit(void)
                 wakeup1(initproc);
         }
     }
-
+    cprintf("process got %d pages\n", proc->pages.counter);
     // Jump into the scheduler, never to return.
     proc->state = ZOMBIE;
     sched();

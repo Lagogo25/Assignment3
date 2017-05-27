@@ -61,6 +61,20 @@ exec(char *path, char **argv)
     clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
     sp = sz;
 
+    /*     * Our changes!!! *     */
+    if(proc->pid>2) {
+        for (int i = 0; i < MAX_TOTAL_PAGES; i++) {
+            proc->pages.all_pages[i][0] = -1;
+            proc->pages.all_pages[i][1] = 0;
+            proc->pages.all_pages[i][2] = 0;
+        }
+        for (int i = 0; i < MAX_PSYC_PAGES; i++)
+            proc->pages.ram_pages[i] = -1;
+        removeSwapFile(proc);
+        createSwapFile(proc);
+    }
+    /*     *                *     */
+
     // Push argument strings, prepare rest of stack in ustack.
     for(argc = 0; argv[argc]; argc++) {
         if(argc >= MAXARG)

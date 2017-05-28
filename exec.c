@@ -10,7 +10,7 @@
 int
 exec(char *path, char **argv)
 {
-  #if defined (FIFO) || defined (SCFIFO) || defined (LAP)    
+  #if defined (LIFO) || defined (SCFIFO) || defined (LAP)    
     if(proc->pid > 2){
       struct paging_meta_data *curr;
       for(curr = &proc->plist.frames[0]; curr < &proc->plist.frames[MAX_TOTAL_PAGES] ; curr++){

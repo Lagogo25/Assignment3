@@ -97,7 +97,7 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
-  #if defined (FIFO) || defined (SCFIFO) || defined (LAP)    
+  #if defined (LIFO) || defined (SCFIFO) || defined (LAP)    
   p->plist.pgflt_counter = 0;
   p->plist.pgout_counter = 0;
   struct paging_meta_data *curr;
@@ -178,7 +178,7 @@ fork(void)
   // Allocate process.
   if((np = allocproc()) == 0)
     return -1;
-  #if defined (FIFO) || defined (SCFIFO) || defined (LAP)    
+  #if defined (LIFO) || defined (SCFIFO) || defined (LAP)    
   if (np->pid > 2) // create swap file only for whoever is not init/shell
     createSwapFile(np);
   #endif
@@ -204,7 +204,7 @@ fork(void)
   safestrcpy(np->name, proc->name, sizeof(proc->name));
  
   pid = np->pid;
-  #if defined (FIFO) || defined (SCFIFO) || defined (LAP)    
+  #if defined (LIFO) || defined (SCFIFO) || defined (LAP)    
   if(proc->pid > 2){
     np->plist.pgflt_counter = proc->plist.pgflt_counter;
     np->plist.pgout_counter = proc->plist.pgout_counter;
@@ -303,7 +303,7 @@ exit(void)
   proc->cwd = 0;
 
   #ifdef TRUE // ??
-  #if defined (FIFO) || defined (SCFIFO) || defined (LAP)    
+  #if defined (LIFO) || defined (SCFIFO) || defined (LAP)    
   int counter_phys_memory = counts_phys_memory(proc);
   int counter_file_memory = counts_file_memory(proc);
   cprintf("%d %s %d %d %d %d %s \n", proc->pid, "ZOMBIE", counter_phys_memory + counter_file_memory, counter_file_memory, proc->plist.pgflt_counter, proc->plist.pgout_counter, proc->name);

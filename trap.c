@@ -36,7 +36,7 @@ idtinit(void)
 void
 trap(struct trapframe *tf)
 {
-  #if defined (FIFO) || defined (SCFIFO) || defined (LAP)    
+  #if defined (LIFO) || defined (SCFIFO) || defined (LAP)    
   uint va_fault;
   #endif
   if(tf->trapno == T_SYSCALL){
@@ -81,7 +81,7 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
   case T_PGFLT:
-    #if defined (FIFO) || defined (SCFIFO) || defined (LAP)    
+    #if defined (LIFO) || defined (SCFIFO) || defined (LAP)    
     va_fault = rcr2();
     pgflt_handler(proc,va_fault);
     #endif

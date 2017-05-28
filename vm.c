@@ -255,7 +255,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
   a = PGROUNDUP(oldsz);
   for(; a < newsz; a += PGSIZE){
 
-    #if defined (FIFO) || defined (SCFIFO) || defined (LAP)    
+    #if defined (LIFO) || defined (SCFIFO) || defined (LAP)    
     int phys_counter = counts_phys_memory(proc);
     int file_counter = counts_file_memory(proc);
     if(phys_counter ==  MAX_PSYC_PAGES && proc->pid >2){
@@ -277,7 +277,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     memset(mem, 0, PGSIZE);
     mappages(pgdir, (char*)a, PGSIZE, v2p(mem), PTE_W|PTE_U);
 
-    #if defined (FIFO) || defined (SCFIFO) || defined (LAP)    
+    #if defined (LIFO) || defined (SCFIFO) || defined (LAP)    
     if(proc->pid >2){
       uint* b = (uint*)PGROUNDDOWN(a);
       pte_t* pte = walkpgdir(pgdir,b,0);
@@ -316,7 +316,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       if(pa == 0)
         panic("kfree");
 
-      #if defined (FIFO) || defined (SCFIFO) || defined (LAP)    
+      #if defined (LIFO) || defined (SCFIFO) || defined (LAP)    
       if(proc->pid > 2){
         *pte = *pte & ~PTE_P;
         *pte = *pte & ~PTE_PG;
@@ -487,11 +487,13 @@ pgflt_handler(struct proc* p, uint va_fault){
   
 }
 
+// lifo means last in = first out
+// we seek for the last page created!
 int
-choose_by_FIFO(struct proc* p){
+choose_by_LIFO(struct proc* p){
   int i;
   int chosen = -1;
-  int curr_time = ticks+1;
+  int curr_time = -1;
   pte_t* pte;
   for(i=3; i<MAX_TOTAL_PAGES; i++){
     if(p->plist.frames[i].va != 0){
@@ -499,7 +501,7 @@ choose_by_FIFO(struct proc* p){
       if(!(*pte & PTE_P))
         continue;
       if(p->plist.frames[i].swapFile_offset == -1){
-        if(curr_time > p->plist.frames[i].creation_time){
+        if(curr_time < p->plist.frames[i].creation_time){
           curr_time = p->plist.frames[i].creation_time;
           chosen = i;
         }
@@ -565,8 +567,8 @@ choose_page_to_swapFile(struct proc* p){
   return -1;
   #endif
 
-  #ifdef FIFO
-  return choose_by_FIFO(p);
+  #ifdef LIFO
+  return choose_by_LIFO(p);
   #endif
 
   #ifdef SCFIFO

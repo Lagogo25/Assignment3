@@ -495,7 +495,7 @@ choose_by_LIFO(struct proc* p){
     int chosen = -1;
     int curr_time = -1;
     pte_t* pte;
-    for(i=3; i<MAX_TOTAL_PAGES; i++){
+    for(i=0; i<MAX_TOTAL_PAGES; i++){
         if(p->plist.frames[i].va != 0){
             pte = walkpgdir(p->pgdir,(char*)PGROUNDDOWN(p->plist.frames[i].va), 0);
             if(!(*pte & PTE_P))
@@ -513,7 +513,7 @@ choose_by_LIFO(struct proc* p){
 
 int
 choose_by_SCFIFO(struct proc* p){
-    int i = 3;
+    int i = 0;
     int chosen = -1;
     int curr_time = ticks+1;
     pte_t* pte;
@@ -550,7 +550,7 @@ choose_by_LAP(struct proc* p){
     int i;
     int chosen = -1;
     uint curr_age = BIT32 - 1;
-    for(i=3; i<MAX_TOTAL_PAGES; i++){
+    for(i=0; i<MAX_TOTAL_PAGES; i++){
         if(p->plist.frames[i].used == 1 && p->plist.frames[i].swapFile_offset == -1){
             if(curr_age > p->plist.frames[i].age){
                 curr_age = p->plist.frames[i].age;

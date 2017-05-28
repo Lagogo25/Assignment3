@@ -12,14 +12,19 @@
 void freerange(void *vstart, void *vend);
 extern char end[]; // first address after kernel loaded from ELF file
 
+/** We added!! **/
+int free_pages_bound; 
+int occupied_pages = 0;     
+int from_freerange;
 struct run {
-    struct run *next;
+  struct run *next;
 };
+/**           **/
 
 struct {
-    struct spinlock lock;
-    int use_lock;
-    struct run *freelist;
+  struct spinlock lock;
+  int use_lock;
+  struct run *freelist;
 } kmem;
 
 // Initialization happens in two phases.
@@ -30,25 +35,28 @@ struct {
 void
 kinit1(void *vstart, void *vend)
 {
-    initlock(&kmem.lock, "kmem");
-    kmem.use_lock = 0;
-    freerange(vstart, vend);
+  initlock(&kmem.lock, "kmem");
+  kmem.use_lock = 0;
+  freerange(vstart, vend);
 }
 
 void
 kinit2(void *vstart, void *vend)
 {
-    freerange(vstart, vend);
-    kmem.use_lock = 1;
+  free_pages_bound = (vend - vstart)/PGSIZE; // we added
+  freerange(vstart, vend);
+  kmem.use_lock = 1;
 }
 
 void
 freerange(void *vstart, void *vend)
 {
-    char *p;
-    p = (char*)PGROUNDUP((uint)vstart);
-    for(; p + PGSIZE <= (char*)vend; p += PGSIZE)
-        kfree(p);
+  char *p;
+  p = (char*)PGROUNDUP((uint)vstart);
+  for(; p + PGSIZE <= (char*)vend; p += PGSIZE){
+    from_freerange = 1; // we added
+    kfree(p);
+  }
 }
 
 //PAGEBREAK: 21
@@ -59,21 +67,31 @@ freerange(void *vstart, void *vend)
 void
 kfree(char *v)
 {
-    struct run *r;
+  struct run *r;
 
-    if((uint)v % PGSIZE || v < end || v2p(v) >= PHYSTOP)
-        panic("kfree");
+  if((uint)v % PGSIZE || v < end || v2p(v) >= PHYSTOP){
+    // cprintf("v = %x, end = %x \n",v,end); // debug print
+    panic("kfree");
+  }
 
-    // Fill with junk to catch dangling refs.
-    memset(v, 1, PGSIZE);
+  // Fill with junk to catch dangling refs.
+  memset(v, 1, PGSIZE);
 
-    if(kmem.use_lock)
-        acquire(&kmem.lock);
-    r = (struct run*)v;
-    r->next = kmem.freelist;
-    kmem.freelist = r;
-    if(kmem.use_lock)
-        release(&kmem.lock);
+  if(kmem.use_lock)
+    acquire(&kmem.lock);
+  r = (struct run*)v;
+  r->next = kmem.freelist;
+  kmem.freelist = r;
+  /** We added! **/
+  if(from_freerange){ 
+    from_freerange = 0;     
+  }     
+  else{     
+    occupied_pages--;     
+  }
+  /** We added! **/
+  if(kmem.use_lock)
+    release(&kmem.lock);
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -82,15 +100,16 @@ kfree(char *v)
 char*
 kalloc(void)
 {
-    struct run *r;
+  struct run *r;
+  occupied_pages++; // We added
 
-    if(kmem.use_lock)
-        acquire(&kmem.lock);
-    r = kmem.freelist;
-    if(r)
-        kmem.freelist = r->next;
-    if(kmem.use_lock)
-        release(&kmem.lock);
-    return (char*)r;
+  if(kmem.use_lock)
+    acquire(&kmem.lock);
+  r = kmem.freelist;
+  if(r)
+    kmem.freelist = r->next;
+  if(kmem.use_lock)
+    release(&kmem.lock);
+  return (char*)r;
 }
 

@@ -50,6 +50,8 @@ TOOLPREFIX := $(shell if i386-jos-elf-objdump -i 2>&1 | grep '^elf32-i386$$' >/d
 	echo "***" 1>&2; exit 1; fi)
 endif
 
+SELECTION = NONE
+
 # If the makefile can't find QEMU, specify its path here
 # QEMU = qemu-system-i386
 
@@ -69,7 +71,7 @@ QEMU = $(shell if which qemu > /dev/null; \
 	echo "***" 1>&2; exit 1)
 endif
 
-CC = $(TOOLPREFIX)gcc
+CC = $(TOOLPREFIX)gcc -D=$(SELECTION)
 AS = $(TOOLPREFIX)gas
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
@@ -172,7 +174,7 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
-	_sanity\
+	_myMemTest\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

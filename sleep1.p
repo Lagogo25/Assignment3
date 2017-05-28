@@ -71,43 +71,43 @@ inline release(x)
 
 inline sleep(cond, lk)
 {
-assert !sleeping[_pid];
-if
-:: cond ->
-skip
-:: else ->
-atomic { release(lk); sleeping[_pid] = 1 };
-sleeping[_pid] == 0;
-acquire(lk)
-fi
+	assert !sleeping[_pid];
+	if
+	:: cond ->
+		skip
+	:: else ->
+		atomic { release(lk); sleeping[_pid] = 1 };
+		sleeping[_pid] == 0;
+		acquire(lk)
+	fi
 }
 
 inline wakeup()
 {
 	w = 0;
 	do
-		:: w < N ->
-				sleeping[w] = 0;
-	w = w + 1
+	:: w < N ->
+		sleeping[w] = 0;
+		w = w + 1
 	:: else ->
-	break
+		break
 	od
 }
 
 active[N] proctype consumer()
 {
 	byte i, x;
-
+	
 	i = 0;
 	do
-		:: i < ITER ->
-				acquire(lk);
-	sleep(value > 0, lk);
-	x = value; value = x - 1; x = 0;
-	release(lk);
-	i = i + 1;
+	:: i < ITER ->
+		acquire(lk);
+		sleep(value > 0, lk);
+		x = value; value = x - 1; x = 0;
+		release(lk);
+		i = i + 1;
 	:: else ->
-	break
+		break
 	od;
 	i = 0;
 	skip
@@ -116,19 +116,19 @@ active[N] proctype consumer()
 active[N] proctype producer()
 {
 	byte i, x, w;
-
+	
 	i = 0;
 	do
-		:: i < ITER ->
-				acquire(lk);
-	x = value; value = x + 1; x = 0;
-	release(lk);
-	wakeup();
-	i = i + 1;
+	:: i < ITER ->
+		acquire(lk);
+		x = value; value = x + 1; x = 0;
+		release(lk);
+		wakeup();
+		i = i + 1;
 	:: else ->
-	break
+		break
 	od;
 	i = 0;
-	skip
+	skip	
 }
 

@@ -9,6 +9,7 @@ struct spinlock;
 struct stat;
 struct superblock;
 
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -194,7 +195,7 @@ void            clearpteu(pde_t *pgdir, char *uva);
 int 			choose_page_to_swapFile(struct proc*);
 void 			swap(struct proc*);
 void 			pgflt_handler(struct proc*, uint);
-//int 			mappages(pde_t *, void *, uint , uint , int);
+pte_t*          walkpgdir(pde_t *pgdir, const void *va, int alloc);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

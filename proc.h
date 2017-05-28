@@ -70,7 +70,7 @@ struct page_list{
   struct paging_meta_data frames[MAX_TOTAL_PAGES];  // will store data on all pages (RAM & DISK)
   int pgflt_counter;                                // number of pagefaults
   int pgout_counter;                                // number of pageouts
-  int used_file[15];                                // index (?) of page in frames
+  int used_file[MAX_PSYC_PAGES];                                // index (?) of page in frames
 };
 
 

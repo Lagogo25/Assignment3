@@ -193,7 +193,7 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 int 			choose_page_to_swapFile(struct proc*);
-void 			swap(struct proc*);
+void 			change_pages(struct proc *);
 void 			pgflt_handler(struct proc*, uint);
 pte_t*          walkpgdir(pde_t *pgdir, const void *va, int alloc);
 

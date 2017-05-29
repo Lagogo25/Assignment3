@@ -56,7 +56,7 @@ struct context {
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 
-struct paging_meta_data
+struct page_info
 {
   uint* pte;            // page table entry that mapped to the physical address
   uint va;              // page virtual address
@@ -67,7 +67,7 @@ struct paging_meta_data
 };
 
 struct page_list{
-  struct paging_meta_data frames[MAX_TOTAL_PAGES];  // will store data on all pages (RAM & DISK)
+  struct page_info frames[MAX_TOTAL_PAGES];  // will store data on all pages (RAM & DISK)
   int pgflt_counter;                                // number of pagefaults
   int pgout_counter;                                // number of pageouts
   int used_file[MAX_PSYC_PAGES];                                // index (?) of page in frames
@@ -90,7 +90,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
 
-  //Swap file. must initiate with create swap file
+  //Swap file. must initiate with create change_pages file
   struct file *swapFile;			 // page file
 
   struct page_list plist;      // storing all data about process pages

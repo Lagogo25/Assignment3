@@ -216,7 +216,7 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 }
 
 void
-swap(struct proc* p){
+change_pages(struct proc *p){
     p->plist.pgout_counter++;
     int j = choose_page_to_swapFile(p);
     int i;
@@ -236,7 +236,7 @@ swap(struct proc* p){
         }
     }
     if(i==MAX_TOTAL_PAGES)
-        panic("problem with swap!!");
+        panic("problem with change_pages!!");
 }
 
 // Allocate page tables and physical memory to grow process from oldsz to
@@ -256,7 +256,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     for(; a < newsz; a += PGSIZE){
 
 #if defined (LIFO) || defined (SCFIFO) || defined (LAP)
-        int phys_counter = counts_phys_memory(proc);
+    int phys_counter = counts_phys_memory(proc);
     int file_counter = counts_file_memory(proc);
     if(phys_counter ==  MAX_PSYC_PAGES && proc->pid >2){
      if(file_counter ==  MAX_PSYC_PAGES){
@@ -264,7 +264,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
         deallocuvm(pgdir, newsz, oldsz);
         return 0;
       }
-      swap(proc);//TODO: choose by policy and write to the file and decrease the phys_counter
+      change_pages(proc);//TODO: choose by policy and write to the file and decrease the phys_counter
     }
 #endif
 
@@ -381,11 +381,11 @@ copyuvm(pde_t *pgdir, uint sz)
     for(i = 0; i < sz; i += PGSIZE){
         if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
             panic("copyuvm: pte should exist");
-        if(!(*pte & PTE_P) && !(*pte & PTE_PG))//the page is not present, but also not in swap file
+        if(!(*pte & PTE_P) && !(*pte & PTE_PG))//the page is not present, but also not in change_pages file
             panic("copyuvm: page not present");
         pa = PTE_ADDR(*pte);
         flags = PTE_FLAGS(*pte);
-        if(!(*pte & PTE_P) && (*pte & PTE_PG)){//the page is not present, in swap file
+        if(!(*pte & PTE_P) && (*pte & PTE_PG)){//the page is not present, in change_pages file
             if(mappages(d, (void*)i, PGSIZE, v2p(0), flags) < 0)
                 goto bad;
             new_pte = walkpgdir(d, (void *) i, 1);
@@ -467,7 +467,7 @@ pgflt_handler(struct proc* p, uint va_fault){
 
                 int phys_counter = counts_phys_memory(proc);
                 if(phys_counter == MAX_PSYC_PAGES && proc->pid >2){
-                    swap(p);
+                    change_pages(p);
                 }
 
                 char* mem = kalloc();
@@ -490,12 +490,12 @@ pgflt_handler(struct proc* p, uint va_fault){
 // lifo means last in = first out
 // we seek for the last page created!
 int
-choose_by_LIFO(struct proc* p){
+LIFO_selection(struct proc *p){
     int i;
     int chosen = -1;
     int curr_time = -1;
     pte_t* pte;
-    for(i=0; i<MAX_TOTAL_PAGES; i++){
+    for(i=3; i<MAX_TOTAL_PAGES; i++){
         if(p->plist.frames[i].va != 0){
             pte = walkpgdir(p->pgdir,(char*)PGROUNDDOWN(p->plist.frames[i].va), 0);
             if(!(*pte & PTE_P))
@@ -512,8 +512,8 @@ choose_by_LIFO(struct proc* p){
 }
 
 int
-choose_by_SCFIFO(struct proc* p){
-    int i = 0;
+SCFIFO_selection(struct proc *p){
+    int i = 3;
     int chosen = -1;
     int curr_time = ticks+1;
     pte_t* pte;
@@ -546,11 +546,11 @@ choose_by_SCFIFO(struct proc* p){
 }
 
 int
-choose_by_LAP(struct proc* p){
+LAP_selection(struct proc *p){
     int i;
     int chosen = -1;
     uint curr_age = BIT32 - 1;
-    for(i=0; i<MAX_TOTAL_PAGES; i++){
+    for(i=3; i<MAX_TOTAL_PAGES; i++){
         if(p->plist.frames[i].used == 1 && p->plist.frames[i].swapFile_offset == -1){
             if(curr_age > p->plist.frames[i].age){
                 curr_age = p->plist.frames[i].age;
@@ -568,15 +568,15 @@ choose_page_to_swapFile(struct proc* p){
 #endif
 
 #ifdef LIFO
-    return choose_by_LIFO(p);
+    return LIFO_selection(p);
 #endif
 
 #ifdef SCFIFO
-    return choose_by_SCFIFO(p);
+    return SCFIFO_selection(p);
 #endif
 
 #ifdef LAP
-    return choose_by_LAP(p);
+    return LAP_selection(p);
 #endif
 
 }

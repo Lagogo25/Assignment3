@@ -74,7 +74,7 @@ allocproc(void)
 #if defined (LIFO) || defined (SCFIFO) || defined (LAP)
     p->plist.pgflt_counter = 0;
   p->plist.pgout_counter = 0;
-  struct paging_meta_data *curr;
+  struct page_info *curr;
   for(curr = p->plist.frames; curr < &p->plist.frames[MAX_TOTAL_PAGES]; curr++){
     curr->pte = 0;
     curr->va = 0;
@@ -153,8 +153,8 @@ fork(void)
     if((np = allocproc()) == 0)
         return -1;
 #if defined (LIFO) || defined (SCFIFO) || defined (LAP)
-    if (np->pid > 2) // create swap file only for whoever is not init/shell
-    createSwapFile(np);
+    if (np->pid > 2) // create change_pages file only for whoever is not init/shell
+        createSwapFile(np);
 #endif
     // Copy process state from p.
     if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
@@ -180,35 +180,35 @@ fork(void)
     pid = np->pid;
 #if defined (LIFO) || defined (SCFIFO) || defined (LAP)
     if(proc->pid > 2){
-    np->plist.pgflt_counter = proc->plist.pgflt_counter;
-    np->plist.pgout_counter = proc->plist.pgout_counter;
-    for(i=0; i<MAX_PSYC_PAGES; i++){
-      np->plist.used_file[i] = proc->plist.used_file[i];
-    }
-    for(i=0; i<MAX_TOTAL_PAGES; i++){
-      //saving its paging meta data  
-      np->plist.frames[i].swapFile_offset = proc->plist.frames[i].swapFile_offset;
-      np->plist.frames[i].age = proc->plist.frames[i].age;
-      np->plist.frames[i].creation_time = proc->plist.frames[i].creation_time;
-      np->plist.frames[i].va = proc->plist.frames[i].va;
-      np->plist.frames[i].pte = walkpgdir(np->pgdir,(char*)PGROUNDDOWN(np->plist.frames[i].va), 0);
-      np->plist.frames[i].used = proc->plist.frames[i].used;
-      //reading the data of the current page from swapFile
-      int k = 0;
-      for(;k < PGSIZE; k+=128){
-        char buffer[128];
-        memset(buffer,0,128);
-        int num_read = 1;
-        num_read = readFromSwapFile(proc, buffer , proc->plist.frames[i].swapFile_offset*PGSIZE + k, 128);
-        //writing the data to the new child process' swapFile
-        if(num_read < 1)
-          break;
-        if(!writeToSwapFile(np, buffer, np->plist.frames[i].swapFile_offset*PGSIZE + k, num_read)){
-          panic("problem with writing to swapFile\n");
+        np->plist.pgflt_counter = proc->plist.pgflt_counter;
+        np->plist.pgout_counter = proc->plist.pgout_counter;
+        for(i=0; i<MAX_PSYC_PAGES; i++){
+          np->plist.used_file[i] = proc->plist.used_file[i];
         }
-      }
+        for(i=0; i<MAX_TOTAL_PAGES; i++){
+          //saving its page info
+          np->plist.frames[i].swapFile_offset = proc->plist.frames[i].swapFile_offset;
+          np->plist.frames[i].age = proc->plist.frames[i].age;
+          np->plist.frames[i].creation_time = proc->plist.frames[i].creation_time;
+          np->plist.frames[i].va = proc->plist.frames[i].va;
+          np->plist.frames[i].pte = walkpgdir(np->pgdir,(char*)PGROUNDDOWN(np->plist.frames[i].va), 0);
+          np->plist.frames[i].used = proc->plist.frames[i].used;
+          //reading the data of the current page from swapFile
+          int k = 0;
+          for(;k < PGSIZE; k+=128){
+            char buffer[128];
+            memset(buffer,0,128);
+            int num_read = 1;
+            num_read = readFromSwapFile(proc, buffer , proc->plist.frames[i].swapFile_offset*PGSIZE + k, 128);
+            //writing the data to the new child process' swapFile
+            if(num_read < 1)
+              break;
+            if(!writeToSwapFile(np, buffer, np->plist.frames[i].swapFile_offset*PGSIZE + k, num_read)){
+              panic("problem with writing to swapFile\n");
+            }
+          }
+        }
     }
-  }
 #endif
     // lock to force the compiler to emit the np->state write last.
     acquire(&ptable.lock);
@@ -276,13 +276,13 @@ exit(void)
     end_op();
     proc->cwd = 0;
 
-#ifdef TRUE // ??
-    #if defined (LIFO) || defined (SCFIFO) || defined (LAP)
+#ifdef TRUE // VERBOSE
+#if defined (LIFO) || defined (SCFIFO) || defined (LAP)
   int counter_phys_memory = counts_phys_memory(proc);
   int counter_file_memory = counts_file_memory(proc);
   cprintf("%d %s %d %d %d %d %s \n", proc->pid, "ZOMBIE", counter_phys_memory + counter_file_memory, counter_file_memory, proc->plist.pgflt_counter, proc->plist.pgout_counter, proc->name);
-  #endif
-  cprintf("%d% free pages in the system \n", (free_pages_bound-occupied_pages)*100/free_pages_bound);
+#endif
+  cprintf("%d / %d free pages in the system \n", free_pages_bound-occupied_pages, free_pages_bound);
 #endif
 
     acquire(&ptable.lock);
@@ -323,7 +323,7 @@ wait(void)
             havekids = 1;
             if(p->state == ZOMBIE){
                 // Found one.
-                child.pid = p->pid;           // whatever neccesary to remove it's swap
+                child.pid = p->pid;           // whatever neccesary to remove it's change_pages
                 child.swapFile = p->swapFile;
                 pid = p->pid;
                 kfree(p->kstack);
@@ -335,7 +335,7 @@ wait(void)
                 p->name[0] = 0;
                 p->killed = 0;
                 release(&ptable.lock);
-                removeSwapFile(&child); // remove child's swap!
+                removeSwapFile(&child); // remove child's change_pages!
                 return pid;
             }
         }
@@ -578,14 +578,14 @@ procdump(void)
         }
         cprintf("\n");
     }
-    cprintf("%d% free pages in the system \n", (free_pages_bound-occupied_pages)*100/free_pages_bound);
+    cprintf("%d / %d free pages in the system \n", free_pages_bound-occupied_pages,free_pages_bound);
 
 }
 
 //adding to pages list new page, returns 1 if success and 0 otherwise
 int
 add_page(struct proc* p, uint* pte, uint va, int offset){
-    struct paging_meta_data *curr;
+    struct page_info *curr;
 
     for(curr = &p->plist.frames[0]; curr < &p->plist.frames[MAX_TOTAL_PAGES] ; curr++){
         if(offset == -1 && curr->used == 0){
@@ -608,7 +608,7 @@ add_page(struct proc* p, uint* pte, uint va, int offset){
 
 int
 remove_page(struct proc* p, uint va){
-    struct paging_meta_data *curr;
+    struct page_info *curr;
     for(curr = &p->plist.frames[0]; curr < &p->plist.frames[MAX_TOTAL_PAGES] ; curr++){
         if(curr->va == va){
             curr->used = 0;

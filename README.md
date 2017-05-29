@@ -9,7 +9,7 @@ in fork:
     if (proc != initproc)
         createSwapFile(np); // creates a swap file for proccess so he can use pages
 in exit:
-	removeSwapFile(proc); // delete the process swap file
+	removeSwapFile(proc); // delete the process change_pages file
 in growproc:
 	if (n/PGSIZE > MAX_TOTAL_PAGES - (proc->p_pages + proc->v_pages)){
 		return -1; // no more space to allocate pages

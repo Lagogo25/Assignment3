@@ -236,7 +236,7 @@ change_pages(struct proc *p){
         }
     }
     if(i==MAX_TOTAL_PAGES)
-        panic("problem with change_pages!!");
+        panic("problem with swap file!!");
 }
 
 // Allocate page tables and physical memory to grow process from oldsz to
@@ -381,11 +381,11 @@ copyuvm(pde_t *pgdir, uint sz)
     for(i = 0; i < sz; i += PGSIZE){
         if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
             panic("copyuvm: pte should exist");
-        if(!(*pte & PTE_P) && !(*pte & PTE_PG))//the page is not present, but also not in change_pages file
+        if(!(*pte & PTE_P) && !(*pte & PTE_PG))//the page is not present, but also not in swap file
             panic("copyuvm: page not present");
         pa = PTE_ADDR(*pte);
         flags = PTE_FLAGS(*pte);
-        if(!(*pte & PTE_P) && (*pte & PTE_PG)){//the page is not present, in change_pages file
+        if(!(*pte & PTE_P) && (*pte & PTE_PG)){//the page is not present, in swap file
             if(mappages(d, (void*)i, PGSIZE, v2p(0), flags) < 0)
                 goto bad;
             new_pte = walkpgdir(d, (void *) i, 1);

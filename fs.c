@@ -672,13 +672,13 @@ char* itoa(int i, char b[]){
     }while(i);
     return b;
 }
-//remove change_pages file of proc p;
+//remove swap file of proc p;
 int
 removeSwapFile(struct proc* p)
 {
 	//path of proccess
 	char path[DIGITS];
-	memmove(path,"/.change_pages", 6);
+	memmove(path,"/.swap", 6);
 	itoa(p->pid, path+ 6);
 
 	struct inode *ip, *dp;
@@ -747,7 +747,7 @@ createSwapFile(struct proc* p)
 {
 
 	char path[DIGITS];
-	memmove(path,"/.change_pages", 6);
+	memmove(path,"/.swap", 6);
 	itoa(p->pid, path+ 6);
 
     begin_op();

@@ -153,7 +153,7 @@ fork(void)
     if((np = allocproc()) == 0)
         return -1;
 #if defined (LIFO) || defined (SCFIFO) || defined (LAP)
-    if (np->pid > 2) // create change_pages file only for whoever is not init/shell
+    if (np->pid > 2) // create swap file only for whoever is not init/shell
         createSwapFile(np);
 #endif
     // Copy process state from p.
@@ -323,7 +323,7 @@ wait(void)
             havekids = 1;
             if(p->state == ZOMBIE){
                 // Found one.
-                child.pid = p->pid;           // whatever neccesary to remove it's change_pages
+                child.pid = p->pid;           // whatever neccesary to remove it's swap
                 child.swapFile = p->swapFile;
                 pid = p->pid;
                 kfree(p->kstack);
@@ -335,7 +335,7 @@ wait(void)
                 p->name[0] = 0;
                 p->killed = 0;
                 release(&ptable.lock);
-                removeSwapFile(&child); // remove child's change_pages!
+                removeSwapFile(&child); // remove child's swap!
                 return pid;
             }
         }

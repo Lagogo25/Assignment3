@@ -90,7 +90,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
 
-  //Swap file. must initiate with create change_pages file
+  //Swap file. must initiate with create swap file
   struct file *swapFile;			 // page file
 
   struct page_list plist;      // storing all data about process pages

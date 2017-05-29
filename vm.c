@@ -228,7 +228,7 @@ change_pages(struct proc *p){
             uint pa = PTE_ADDR(*pte);
             char* mem = (char*)p2v(pa);
             writeToSwapFile(p,(char*)p->plist.frames[j].va,i*PGSIZE, PGSIZE);
-            *pte = *pte & ~PTE_P; //clearing the PTE_P flag and setting the PTE_PG flag
+            *pte = *pte & ~PTE_P; // clearing the PTE_P flag and setting the PTE_PG flag
             *pte = *pte | PTE_PG;
             kfree(mem);
             lcr3(v2p(p->pgdir));
@@ -264,7 +264,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
         deallocuvm(pgdir, newsz, oldsz);
         return 0;
       }
-      change_pages(proc);//TODO: choose by policy and write to the file and decrease the phys_counter
+      change_pages(proc); //TODO: choose by policy and write to the file and decrease the phys_counter
     }
 #endif
 

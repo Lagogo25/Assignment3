@@ -224,7 +224,7 @@ counts_phys_memory(struct proc* p){
     int counter=0;
     pte_t* pte;
     for(i=0; i<MAX_TOTAL_PAGES; i++){
-        if(p->plist.frames[i].va != 0 && p->plist.frames[i].swapFile_offset == -1){
+        if(p->plist.frames[i].used == 1 && p->plist.frames[i].swapFile_offset == -1){
             pte = walkpgdir(p->pgdir, (char*)PGROUNDDOWN(p->plist.frames[i].va), 0);
             if(*pte & PTE_P){
                 counter++;
@@ -241,7 +241,7 @@ counts_file_memory(struct proc* p){
     int counter=0;
     pte_t* pte;
     for(i=0; i<MAX_TOTAL_PAGES; i++){
-        if(p->plist.frames[i].va != 0 && p->plist.frames[i].swapFile_offset != -1){
+        if(p->plist.frames[i].used == 1 && p->plist.frames[i].swapFile_offset != -1){
             pte = walkpgdir(p->pgdir, (char*)PGROUNDDOWN(p->plist.frames[i].va), 0);
             if(*pte & PTE_PG){
                 counter++;
@@ -631,8 +631,10 @@ void
 print_pages(void){
     int i;
     cprintf("\n");
+    int num_of_pages = 0;
     for(i=0; i<MAX_TOTAL_PAGES; i++){
         if(proc->plist.frames[i].used == 1){
+            num_of_pages++;
             if(proc->plist.frames[i].swapFile_offset == -1)
                 cprintf("process %d's page[%d] address is 0x%x , in the physical memory\n", proc->pid, i, proc->plist.frames[i].va);
             else
@@ -640,6 +642,7 @@ print_pages(void){
             cprintf("\n");
         }
     }
+    cprintf("process %d has %d pages! %d in memory %d in disk\n", proc->pid, num_of_pages, counts_phys_memory(proc), counts_file_memory(proc));
 }
 
 
